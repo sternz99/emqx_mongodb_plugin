@@ -1,0 +1,14 @@
+{application, emqx_mongodb_plugin,
+ [{description, "EMQ X Plugin Template"},
+  {vsn, "git"},
+  {modules, []},
+  {registered, [emqx_mongodb_plugin_sup]},
+  {applications, [kernel, stdlib, mongodb]},
+  {mod, {emqx_mongodb_plugin_app,[]}},
+  {env, []},
+  {licenses, ["Apache-2.0"]},
+  {maintainers, ["EMQ X Team <contact@emqx.io>"]},
+  {links, [{"Homepage", "https://emqx.io/"},
+           {"Github", "https://github.com/emqx/emqx-plugin-template"}
+          ]}
+ ]}.
