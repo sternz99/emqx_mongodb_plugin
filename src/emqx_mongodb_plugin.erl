@@ -17,6 +17,8 @@
 -module(emqx_mongodb_plugin).
 
 -include_lib("emqx/include/emqx.hrl").
+-import(string,[concat/2]).
+-import(lists,[nth/2]). 
 
 -export([ load/1
         , unload/0
@@ -92,11 +94,45 @@ on_client_connack(ConnInfo = #{clientid := ClientId}, ConnAck, _Env) ->
 
 on_client_connected(ClientInfo = #{clientid := ClientId}, ConnInfo, _Env) ->
     io:format("Client(~s) connected, ClientInfo:~n~p~n, ConnInfo:~n~p~n",
-              [ClientId, ClientInfo, ConnInfo]).
+                [ClientId, ClientInfo, ConnInfo]),
+    Database = <<"thingsDB">>,
+    SplitClientId = binary:split(ClientId,<<"/">>, [global]),
+    Collection = nth(1, SplitClientId),
+    Thingtype = nth(2, SplitClientId),
+    Thingid = nth(3, SplitClientId),
+    Str = <<"/">>,
+    Tid= <<Thingtype/binary, Str/binary, Thingid/binary>>,
+    DateTime = erlang:localtime(),
+    Secs = calendar:datetime_to_gregorian_seconds(DateTime),
+    NewSecs = Secs + 19800,
+    {Date={Year,Month,Day},Time={Hour,Minutes,Seconds}} = calendar:gregorian_seconds_to_datetime(NewSecs),
+    Timestamp = lists:flatten(io_lib:format("~2..0w-~2..0w-~4..0w ~2..0w:~2..0w:~2..0w",[Day,Month,Year,Hour,Minutes,Seconds])),
+    Timebinary = list_to_binary(Timestamp),
+    {ok, Connection} = mc_worker_api:connect ([{database, Database}]),
+    Command = #{<<"$set">> => #{<<"connected">> => <<"1">>, <<"timestamp">> => Timebinary}},
+    mc_worker_api:update(Connection, Collection, #{<<"_id">> => Tid}, Command),
+    ok.
 
 on_client_disconnected(ClientInfo = #{clientid := ClientId}, ReasonCode, ConnInfo, _Env) ->
     io:format("Client(~s) disconnected due to ~p, ClientInfo:~n~p~n, ConnInfo:~n~p~n",
-              [ClientId, ReasonCode, ClientInfo, ConnInfo]).
+              [ClientId, ReasonCode, ClientInfo, ConnInfo]),
+    Database = <<"thingsDB">>,
+    SplitClientId = binary:split(ClientId,<<"/">>, [global]),
+    Collection = nth(1, SplitClientId),
+    Thingtype = nth(2, SplitClientId),
+    Thingid = nth(3, SplitClientId),
+    Str = <<"/">>,
+    Tid= <<Thingtype/binary, Str/binary, Thingid/binary>>,
+    DateTime = erlang:localtime(),
+    Secs = calendar:datetime_to_gregorian_seconds(DateTime),
+    NewSecs = Secs + 19800,
+    {Date={Year,Month,Day},Time={Hour,Minutes,Seconds}} = calendar:gregorian_seconds_to_datetime(NewSecs),
+    Timestamp = lists:flatten(io_lib:format("~2..0w-~2..0w-~4..0w ~2..0w:~2..0w:~2..0w",[Day,Month,Year,Hour,Minutes,Seconds])),
+    Timebinary = list_to_binary(Timestamp),
+    {ok, Connection} = mc_worker_api:connect ([{database, Database}]),
+    Command = #{<<"$set">> => #{<<"connected">> => <<"0">>, <<"timestamp">> => Timebinary}},
+    mc_worker_api:update(Connection, Collection, #{<<"_id">> => Tid}, Command),
+    ok.
 
 on_client_authenticate(_ClientInfo = #{clientid := ClientId}, Result, _Env) ->
     io:format("Client(~s) authenticate, Result:~n~p~n", [ClientId, Result]),

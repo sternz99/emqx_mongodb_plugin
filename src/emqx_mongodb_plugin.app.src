@@ -1,5 +1,5 @@
 {application, emqx_mongodb_plugin,
- [{description, "EMQ X Plugin Template"},
+ [{description, "EMQ X MongoDB plugin to store device connecting status"},
   {vsn, "git"},
   {modules, []},
   {registered, [emqx_mongodb_plugin_sup]},
